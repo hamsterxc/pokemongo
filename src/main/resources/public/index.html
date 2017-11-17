@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+        <script src="script.min.js"></script>
+
+        <title>Pokemon Go</title>
+    </head>
+
+    <body>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Distance</th>
+                    <th>Distance using<br/>rare candies</th>
+                    <th>Rare candies<br/>to use</th>
+                </tr>
+            </thead>
+            <tbody id="buddy-body"></tbody>
+        </table>
+
+        <br/>
+
+        <table id="item">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody id="item-body"></tbody>
+        </table>
+
+        <br/>
+
+        <table>
+            <tr>
+                <th class="family-id">ID</th>
+                <th class="family-name">Name</th>
+                <th class="family-candy-evolve">Candies for evolve</th>
+                <th class="family-buddy-distance">Buddy km per candy</th>
+                <th class="family-candy-needed">Candies needed</th>
+                <th class="family-item-needed">Items needed</th>
+                <th class="family-distance">Distance, km</th>
+                <th class='family-notes'>Notes</th>
+            </tr>
+        </table>
+        <div id="families"></div>
+    </body>
+</html>
