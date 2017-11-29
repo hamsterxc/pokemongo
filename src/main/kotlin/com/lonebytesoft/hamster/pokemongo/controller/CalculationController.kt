@@ -1,8 +1,8 @@
 package com.lonebytesoft.hamster.pokemongo.controller
 
 import com.lonebytesoft.hamster.pokemongo.math.LinearEquation
-import com.lonebytesoft.hamster.pokemongo.math.LinearSystemSolver
 import com.lonebytesoft.hamster.pokemongo.math.SolutionType
+import com.lonebytesoft.hamster.pokemongo.math.solve
 import com.lonebytesoft.hamster.pokemongo.model.Family
 import com.lonebytesoft.hamster.pokemongo.model.Global
 import com.lonebytesoft.hamster.pokemongo.model.Pokemon
@@ -201,7 +201,7 @@ constructor(
             }
             LinearEquation(coeffs, equationsData[lead]!!.candy.toDouble())
         }
-        val solution = LinearSystemSolver.solve(equations)
+        val solution = solve(equations)
 
         if(solution.type == SolutionType.UNIQUE) {
             val distances: MutableMap<Int, Double?> = HashMap()
