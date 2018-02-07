@@ -15,9 +15,9 @@ class Pokemon(
         var notes: String = "",
 
         var isWild: Boolean = false,
-        var isEgg: Boolean = false,
-        var isRaid: Boolean = false,
-        var isRegional: Boolean = false,
+        var eggDistance: Double? = null,
+        var raidLevel: Int? = null,
+        var region: String? = null,
 
         var buddyDistance: Double = 0.0,
         var candyCatch: Int = 0,

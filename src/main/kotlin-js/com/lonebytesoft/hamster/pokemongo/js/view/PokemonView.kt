@@ -10,9 +10,9 @@ external class PokemonView {
         val notes: String
 
         val isWild: Boolean
-        val isEgg: Boolean
-        val isRaid: Boolean
-        val isRegional: Boolean
+        var eggDistance: Double?
+        var raidLevel: Int?
+        var region: String?
 
         val buddyDistance: Double
         val candyCatch: Int

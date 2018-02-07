@@ -10,9 +10,9 @@ class PokemonView(
         val notes: String = "",
 
         val isWild: Boolean = false,
-        val isEgg: Boolean = false,
-        val isRaid: Boolean = false,
-        val isRegional: Boolean = false,
+        var eggDistance: Double? = null,
+        var raidLevel: Int? = null,
+        var region: String? = null,
 
         val buddyDistance: Double = 0.0,
         val candyCatch: Int = 0,

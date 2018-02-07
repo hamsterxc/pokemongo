@@ -35,7 +35,7 @@ constructor(
                     PokemonView(
                             userId,
                             pokemon.id, pokemon.name, pokemon.isFamilyLead, pokemon.generation, pokemon.notes,
-                            pokemon.isWild, pokemon.isEgg, pokemon.isRaid, pokemon.isRegional,
+                            pokemon.isWild, pokemon.eggDistance, pokemon.raidLevel, pokemon.region,
                             pokemon.buddyDistance, pokemon.candyCatch, pokemon.candyTransfer,
                             pokemon.evolveFrom?.id, pokemon.evolveCandy, pokemon.evolveItem?.id, pokemon.evolveNotes,
                             userPokemon.seen, userPokemon.caught, userPokemon.have, candy[pokemon.id]!!, userPokemon.introduced

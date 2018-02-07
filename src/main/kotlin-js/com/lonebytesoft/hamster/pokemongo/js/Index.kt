@@ -111,11 +111,11 @@ private fun fillFamilyTables(calculation: CalculationView, pokemons: Array<Pokem
             if (pokemon.notes.isNotBlank()) {
                 notes += pokemon.notes
             }
+            if (!pokemon.region.isNullOrBlank()) {
+                notes = notes.appendLineBreak() + "Region exclusive: " + pokemon.region
+            }
             if (!pokemon.evolveNotes.isNullOrBlank()) {
-                if (notes.isNotBlank()) {
-                    notes += "<br/>"
-                }
-                notes += pokemon.evolveNotes
+                notes = notes.appendLineBreak() + "Evolution: " + pokemon.evolveNotes
             }
 
             val row: Element
