@@ -10,7 +10,7 @@ import javax.persistence.Table
 
 @Entity
 @Table(name = "user_global")
-class UserGlobalEntry (
+data class UserGlobalEntry (
         @Id
         @GeneratedValue(strategy = GenerationType.AUTO)
         val id: Int = 0,

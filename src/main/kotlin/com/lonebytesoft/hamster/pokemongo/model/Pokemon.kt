@@ -1,34 +1,36 @@
 package com.lonebytesoft.hamster.pokemongo.model
 
 import javax.persistence.Entity
+import javax.persistence.GeneratedValue
+import javax.persistence.GenerationType
 import javax.persistence.Id
 import javax.persistence.JoinColumn
 import javax.persistence.OneToOne
 
 @Entity
-class Pokemon(
+data class Pokemon(
         @Id
+        @GeneratedValue(strategy = GenerationType.AUTO)
         var id: Int = 0,
-        var name: String = "",
-        var isFamilyLead: Boolean = false,
+
+        var number: Int = 0,
         var generation: Int = 0,
-        var notes: String = "",
+        var name: String = "",
+        var form: String? = null,
+        @OneToOne
+        @JoinColumn
+        var family: Family? = null,
+        var notes: String? = null,
 
-        var isWild: Boolean = false,
-        var eggDistance: Double? = null,
-        var raidLevel: Int? = null,
-        var region: String? = null,
-
-        var buddyDistance: Double = 0.0,
         var candyCatch: Int = 0,
         var candyTransfer: Int = 0,
 
         @OneToOne
-        @JoinColumn(name = "evolveFrom")
+        @JoinColumn
         var evolveFrom: Pokemon? = null,
         var evolveCandy: Int? = null,
         @OneToOne
-        @JoinColumn(name = "evolveItem")
+        @JoinColumn
         var evolveItem: Item? = null,
         var evolveNotes: String? = null
 )

@@ -6,7 +6,7 @@ import javax.persistence.Table
 
 @Entity
 @Table(name = "global")
-class GlobalEntry(
+data class GlobalEntry(
         @Id
         var key: String = "",
         var value: String? = null

@@ -16,8 +16,6 @@
         <version.kotlin>1.1.60</version.kotlin>
         <version.springboot>1.5.8.RELEASE</version.springboot>
         <version.junit>4.12</version.junit>
-
-        <path.public>src/main/resources/public</path.public>
     </properties>
 
     <build>
@@ -42,23 +40,6 @@
         </pluginManagement>
 
         <plugins>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>2.5</version>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>${path.public}</directory>
-                            <includes>
-                                <include>script.js</include>
-                                <include>script.min.js</include>
-                                <include>script.min.js.map</include>
-                            </includes>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-
             <plugin>
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
@@ -85,7 +66,7 @@
                         <configuration>
                             <sourceDirs>src/main/kotlin-js</sourceDirs>
                             <sourceMap>true</sourceMap>
-                            <outputFile>${project.build.outputDirectory}/${project.artifactId}.js</outputFile>
+                            <outputFile>${project.build.outputDirectory}/js/${project.artifactId}.js</outputFile>
                             <args>
                                 <arg>-Xcoroutines=enable</arg>
                             </args>
@@ -117,7 +98,7 @@
                         </goals>
                         <configuration>
                             <includeArtifactIds>kotlin-stdlib-js</includeArtifactIds>
-                            <outputDirectory>${project.build.outputDirectory}/lib</outputDirectory>
+                            <outputDirectory>${project.build.outputDirectory}/js</outputDirectory>
                             <includes>**\/*.js</includes>
                             <excludes>**\/*.meta.js</excludes>
                         </configuration>
@@ -139,8 +120,8 @@
                         <configuration>
                             <verbose>true</verbose>
                             <charset>UTF-8</charset>
-                            <webappSourceDir>${project.build.outputDirectory}</webappSourceDir>
-                            <webappTargetDir>${project.basedir}/${path.public}</webappTargetDir>
+                            <webappSourceDir>${project.build.outputDirectory}/js</webappSourceDir>
+                            <webappTargetDir>${project.build.outputDirectory}/public</webappTargetDir>
                             <jsEngine>CLOSURE</jsEngine>
                             <closureCreateSourceMap>true</closureCreateSourceMap>
                             <jsSourceDir>.</jsSourceDir>

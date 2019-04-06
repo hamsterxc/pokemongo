@@ -4,6 +4,6 @@ import com.lonebytesoft.hamster.pokemongo.model.UserItem
 
 interface ItemService {
 
-    fun getItems(userId: Int): Map<Int, UserItem>
+    fun getItems(userId: Int): Collection<UserItem>
 
 }

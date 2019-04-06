@@ -1,6 +1,12 @@
 package com.lonebytesoft.hamster.pokemongo.model
 
-data class Family (
-        val lead: Pokemon,
-        val members: Set<Pokemon>
+import javax.persistence.Entity
+import javax.persistence.Id
+
+@Entity
+data class Family(
+        @Id
+        var number: Int = 0,
+        var name: String = "",
+        var buddyDistance: Double? = null
 )

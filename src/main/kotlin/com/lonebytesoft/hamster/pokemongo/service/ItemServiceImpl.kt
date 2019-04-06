@@ -16,17 +16,15 @@ constructor(
         private val userItemRepository: UserItemRepository
 ) : ItemService {
 
-    override fun getItems(userId: Int): Map<Int, UserItem> {
-        val items: MutableMap<Int, UserItem> = userItemRepository.findAllByUserIdEquals(userId)
-                .associateByTo(HashMap(), { it.item.id })
-
+    override fun getItems(userId: Int): Collection<UserItem> {
         val user = userRepository.findOne(userId)
-        itemRepository.findAll()
-                .filter { it.id !in items }
-                .map { UserItem(0, it, user) }
-                .associateByTo(items, { it.item.id })
-
-        return items
+        return mergeUserItemsWithBase(
+                userItemRepository.findAllByUserIdEquals(userId),
+                itemRepository.findAll(),
+                { it.item.id },
+                { it.id },
+                { UserItem(0, it, user, 0) }
+        )
     }
 
 }

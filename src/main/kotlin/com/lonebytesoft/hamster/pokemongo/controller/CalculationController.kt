@@ -3,31 +3,31 @@ package com.lonebytesoft.hamster.pokemongo.controller
 import com.lonebytesoft.hamster.pokemongo.math.LinearEquation
 import com.lonebytesoft.hamster.pokemongo.math.SolutionType
 import com.lonebytesoft.hamster.pokemongo.math.solve
-import com.lonebytesoft.hamster.pokemongo.model.Family
 import com.lonebytesoft.hamster.pokemongo.model.Global
+import com.lonebytesoft.hamster.pokemongo.model.Item
 import com.lonebytesoft.hamster.pokemongo.model.Pokemon
 import com.lonebytesoft.hamster.pokemongo.model.UserItem
 import com.lonebytesoft.hamster.pokemongo.model.UserPokemon
+import com.lonebytesoft.hamster.pokemongo.service.FamilyService
 import com.lonebytesoft.hamster.pokemongo.service.GlobalService
 import com.lonebytesoft.hamster.pokemongo.service.ItemService
 import com.lonebytesoft.hamster.pokemongo.service.PokemonService
-import com.lonebytesoft.hamster.pokemongo.view.CalculationCandyView
-import com.lonebytesoft.hamster.pokemongo.view.CalculationFamilyView
-import com.lonebytesoft.hamster.pokemongo.view.CalculationItemView
-import com.lonebytesoft.hamster.pokemongo.view.CalculationMemberView
 import com.lonebytesoft.hamster.pokemongo.view.CalculationView
+import com.lonebytesoft.hamster.pokemongo.view.FamilyView
+import com.lonebytesoft.hamster.pokemongo.view.ItemView
+import com.lonebytesoft.hamster.pokemongo.view.PokemonView
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RestController
-import java.util.Collections
 
 @RestController
 class CalculationController
 @Autowired
 constructor(
         private val globalService: GlobalService,
+        private val familyService: FamilyService,
         private val pokemonService: PokemonService,
         private val itemService: ItemService
 ) {
@@ -35,51 +35,78 @@ constructor(
     @RequestMapping(method = arrayOf(RequestMethod.GET), path = arrayOf("/calculate/{userId}"))
     fun calculateDistance(@PathVariable userId: Int): CalculationView {
         val global = globalService.get(userId)
+        val families = familyService.getFamilies(userId)
         val pokemons = pokemonService.getPokemons(userId)
         val items = itemService.getItems(userId)
-        val itemPoolInitial = items.mapValues { it.value.have }
-        val itemPool: MutableMap<Int, Int> = HashMap(itemPoolInitial)
 
-        val families: MutableCollection<CalculationFamilyView> = ArrayList()
-        pokemonService.calculateFamilies().forEach { _, family ->
-            val memberViews: MutableCollection<CalculationMemberView> = ArrayList()
+        val itemPoolInitial = items.associateBy({ it.item }, { it.have })
+        val itemPool: MutableMap<Item, Int> = HashMap(itemPoolInitial)
+
+        val calculationFamilyViews = families.map { family ->
+            val members = pokemons.filter { it.pokemon.family?.number == family.family.number }
+            val pokemonViews: MutableCollection<PokemonView> = ArrayList()
+
+            val pokemonPool: MutableMap<Pokemon, Int> = members.associateByTo(HashMap(), { it.pokemon }, { it.have })
+            val itemPoolFamily: MutableMap<Item, Int> = HashMap(itemPoolInitial)
             var candiesNeeded = 0
             var pokemonDistance: Double? = 0.0
 
-            val pokemonPool: MutableMap<Int, Int> = family.members
-                    .associateByTo(HashMap(), { it.id }, { if (it.id in pokemons) pokemons[it.id]!!.have else 0 })
-            val itemPoolFamily: MutableMap<Int, Int> = HashMap(itemPoolInitial)
-
-            var candiesHave = 0
-            for(member in family.members) {
-                var current: Pokemon? = member
+            for(member in members) {
+                val pokemon = member.pokemon
+                var itemAbsent = false
+                var current: Pokemon? = pokemon
                 while(current != null) {
-                    val currentPokemonCount = pokemonPool[current.id] ?: 0
+                    val currentPokemonCount = pokemonPool[current] ?: 0
                     if(currentPokemonCount > 0) {
-                        pokemonPool[current.id] = currentPokemonCount - 1
+                        pokemonPool[current] = currentPokemonCount - 1
                         break
                     } else {
                         val previous = current.evolveFrom
                         if(previous != null) {
                             candiesNeeded += current.evolveCandy ?: 0
-                            if(current.evolveItem != null) {
-                                val itemId = current.evolveItem!!.id
-                                itemPoolFamily[itemId] = (itemPoolFamily[itemId] ?: 0) - 1
-                                itemPool[itemId] = (itemPool[itemId] ?: 0) - 1
+                            current.evolveItem?.let {
+                                val itemCount = itemPoolFamily[it] ?: 0
+                                itemAbsent = itemAbsent || (itemCount <= 0)
+                                itemPoolFamily[it] = itemCount - 1
+                                itemPool[it] = (itemPool[it] ?: 0) - 1
                             }
                         }
                         current = previous
                     }
                 }
 
-                memberViews.add(CalculationMemberView(member.id, current != null))
+                val rank = members
+                        .filter { it.pokemon.name == pokemon.name }
+                        .map {
+                            var rank = 0
+                            var evolutionPokemon: Pokemon? = it.pokemon
+                            while(evolutionPokemon != null) {
+                                rank++
+                                evolutionPokemon = evolutionPokemon.evolveFrom
+                            }
+                            rank
+                        }
+                        .max() ?: 0
+
+                pokemonViews.add(PokemonView(
+                        number = pokemon.number,
+                        name = pokemon.name,
+                        form = pokemon.form,
+                        rank = rank,
+                        isPresent = (current != null) && !itemAbsent,
+                        notes = pokemon.notes,
+                        evolveCandy = pokemon.evolveCandy,
+                        evolveNotes = pokemon.evolveNotes
+                ))
+
                 if(current == null) {
                     var speed = 0.0
-                    var evolution: Pokemon? = member
+                    var evolution: UserPokemon? = member
                     while(evolution != null) {
-                        val pokemon = pokemons[evolution.id]
-                        speed += (pokemon?.caught?.toDouble() ?: 0.0) / (global.walked - (pokemon?.introduced ?: 0.0))
-                        evolution = evolution.evolveFrom
+                        if (global.walked > evolution.introduced) {
+                            speed += evolution.caught.toDouble() / (global.walked - evolution.introduced)
+                        }
+                        evolution = pokemons.firstOrNull { it.pokemon.id == evolution!!.pokemon.evolveFrom?.id }
                     }
 
                     if(speed > 0.0) {
@@ -90,74 +117,65 @@ constructor(
                         pokemonDistance = null
                     }
                 }
-
-                candiesHave += pokemons[member.id]?.candy ?: 0
             }
-            candiesNeeded = maxOf(0, candiesNeeded - candiesHave)
+            candiesNeeded = maxOf(0, candiesNeeded - family.candy)
 
-            val lead = family.lead.id
-            val candyView = buildCalculationCandyView(global, pokemons, family, candiesNeeded)
-            val itemView = buildCalculationItemView(global, items, itemPoolFamily)
-            families.add(CalculationFamilyView(lead, memberViews, candyView, itemView, pokemonDistance))
+            val speedCommon = calculateSpeedCommon(global, members) +
+                    (family.family.buddyDistance?.let { if (it > 0.0) 1.0 / it else 0.0 } ?: 0.0)
+            val calculationItemViews = buildCalculationItemViews(global, items, itemPoolFamily)
+            FamilyView(
+                    number = family.family.number,
+                    name = family.family.name,
+                    pokemons = pokemonViews,
+                    buddyDistance = family.family.buddyDistance ?: 0.0,
+                    candiesNeeded = candiesNeeded,
+                    distanceGeneral = null,
+                    distanceWithRareGeneral = null,
+                    rareToUseGeneral = null,
+                    distancePokemons = pokemonDistance,
+                    distanceCandies = if (speedCommon > 0.0) candiesNeeded / speedCommon else null,
+                    distanceCandiesWithRare = if (speedCommon > 0.0) maxOf(0, candiesNeeded - global.rareCandy) / speedCommon else null,
+                    rareToUse = minOf(candiesNeeded, global.rareCandy),
+                    itemsNeeded = calculationItemViews,
+                    distanceItems = calculationItemViews.map { it.distance }.filterNotNull().sum()
+            )
         }
 
-        val candyViews = buildCommonCalculationCandyViews(global, pokemons, families)
-        val itemView = buildCalculationItemView(global, items, itemPool)
-        return CalculationView(families, candyViews, itemView)
-    }
-
-    private fun buildCalculationCandyView(global: Global, pokemons: Map<Int, UserPokemon>,
-                                          family: Family, candiesNeeded: Int): CalculationCandyView {
-        val members = family.members
-                .mapNotNull { pokemons[it.id] }
-        return if(candiesNeeded > 0) {
-            val speed = calculateSpeedCommon(global, members) + calculateSpeedBuddy(members)
-            if(speed > 0.0) {
-                CalculationCandyView(family.lead.id, candiesNeeded,
-                        candiesNeeded / speed,
-                        minOf(candiesNeeded, global.rareCandy),
-                        if (candiesNeeded > global.rareCandy) (candiesNeeded - global.rareCandy) / speed else 0.0)
-            } else {
-                if(candiesNeeded > global.rareCandy) {
-                    CalculationCandyView(family.lead.id, candiesNeeded, null, global.rareCandy, null)
-                } else {
-                    CalculationCandyView(family.lead.id, candiesNeeded, null, candiesNeeded, 0.0)
+        val candyViews = buildCommonCalculationCandyViews(global, calculationFamilyViews)
+        return CalculationView(
+                buildCalculationItemViews(global, items, itemPool),
+                calculationFamilyViews.map {
+                    val commonView = candyViews.firstOrNull { candyView -> candyView.number == it.number }
+                    it.copy(
+                            distanceGeneral = commonView?.distance,
+                            distanceWithRareGeneral = commonView?.distanceWithRare,
+                            rareToUseGeneral = commonView?.rareToUse
+                    )
                 }
-            }
-        } else {
-            CalculationCandyView(family.lead.id, 0, 0.0, 0, 0.0)
-        }
+        )
     }
 
-    private fun calculateSpeedCommon(global: Global, members: Collection<UserPokemon>): Double {
-        return members
-                .map {
-                    if(global.walked <= it.introduced) {
-                        0.0
-                    } else {
-                        it.caught.toDouble() * (it.pokemon.candyCatch + it.pokemon.candyTransfer) / (global.walked - it.introduced)
+    private fun calculateSpeedCommon(global: Global, members: Collection<UserPokemon>) =
+            members
+                    .sumByDouble {
+                        if(global.walked <= it.introduced) {
+                            0.0
+                        } else {
+                            it.caught.toDouble() * (it.pokemon.candyCatch + it.pokemon.candyTransfer) / (global.walked - it.introduced)
+                        }
                     }
-                }
-                .sum()
-    }
 
-    private fun calculateSpeedBuddy(members: Collection<UserPokemon>): Double {
-        val buddyDistanceMin = members
-                .map { it.pokemon.buddyDistance }
-                .min()
-        return if (buddyDistanceMin == null) 0.0 else 1.0 / buddyDistanceMin
-    }
-
-    private fun buildCommonCalculationCandyViews(global: Global, pokemons: Map<Int, UserPokemon>,
-                                                 families: Collection<CalculationFamilyView>): Collection<CalculationCandyView> {
+    private fun buildCommonCalculationCandyViews(
+            global: Global,
+            families: Collection<FamilyView>
+    ): Collection<CalculationGeneral> {
         val equationsData = families
-                .filter { it.candyNeeded.candy > 0 }
+                .filter { (it.candiesNeeded > 0) && (it.distanceCandies != null) && it.pokemons.any { it.isPresent } }
                 .associate {
-                    val members = it.members
-                            .mapNotNull { pokemons[it.id] }
+                    val buddySpeed = 1.0 / it.buddyDistance
                     val equationData = EquationData(
-                            calculateSpeedCommon(global, members), calculateSpeedBuddy(members), it.candyNeeded.candy)
-                    Pair(it.lead, equationData)
+                            it.candiesNeeded / it.distanceCandies!! - buddySpeed, buddySpeed, it.candiesNeeded)
+                    Pair(it.number, equationData)
                 }
         val distances = calculateSolution(equationsData)
 
@@ -181,10 +199,12 @@ constructor(
             equationsDataMin = equationsDataNew
         }
 
-        return families
-                .filter { it.candyNeeded.candy > 0 }
-                .map { CalculationCandyView(it.lead, it.candyNeeded.candy, distances[it.lead],
-                        equationsData[it.lead]!!.candy - equationsDataMin[it.lead]!!.candy, distancesMin[it.lead]) }
+        return distances.keys.map { CalculationGeneral(
+                    number = it,
+                    distance = distances[it],
+                    distanceWithRare = distancesMin[it],
+                    rareToUse = equationsData[it]!!.candy - equationsDataMin[it]!!.candy
+        ) }
     }
 
     private fun copyEquationsData(equationsData: Map<Int, EquationData>): Map<Int, EquationData> {
@@ -193,13 +213,13 @@ constructor(
     }
 
     private fun calculateSolution(equationsData: Map<Int, EquationData>): Map<Int, Double?> {
-        val leads = ArrayList(equationsData.keys)
-        val equations = leads.mapIndexed { index, lead ->
-            val coeffs = leads.mapIndexed { indexInner, leadInner ->
-                val equationData = equationsData[leadInner]
-                if (indexInner == index) equationData!!.speedCommon + equationData!!.speedBuddy else equationData!!.speedCommon
+        val numbers = ArrayList(equationsData.keys)
+        val equations = numbers.mapIndexed { index, number ->
+            val coeffs = numbers.mapIndexed { indexInner, numberInner ->
+                val equationData = equationsData[numberInner]
+                if (indexInner == index) equationData!!.speedCommon + equationData.speedBuddy else equationData!!.speedCommon
             }
-            LinearEquation(coeffs, equationsData[lead]!!.candy.toDouble())
+            LinearEquation(coeffs, equationsData[number]!!.candy.toDouble())
         }
         val solution = solve(equations)
 
@@ -207,45 +227,48 @@ constructor(
             val distances: MutableMap<Int, Double?> = HashMap()
             return if(solution.values.all { it > 0 }) {
                 solution.values
-                        .mapIndexed { index, distance -> Pair(leads[index], distance) }
+                        .mapIndexed { index, distance -> Pair(numbers[index], distance) }
                         .associate { it }
             } else {
                 val equationsDataNew: MutableMap<Int, EquationData> = HashMap()
                 solution.values.forEachIndexed { index, distance ->
                     if(distance > 0) {
-                        equationsDataNew += Pair(leads[index], equationsData[leads[index]]!!)
+                        equationsDataNew += Pair(numbers[index], equationsData[numbers[index]]!!)
                     } else {
-                        distances += Pair(leads[index], 0.0)
+                        distances += Pair(numbers[index], 0.0)
                     }
                 }
                 distances + calculateSolution(equationsDataNew)
             }
         } else {
-            return leads.associate { Pair(it, null) }
+            return numbers.associate { Pair(it, null) }
         }
     }
 
-    private fun buildCalculationItemView(global: Global, items: Map<Int, UserItem>, pool: Map<Int, Int>): CalculationItemView {
-        val id = pool.entries
-                .filter { it.value < 0 }
-                .flatMap { Collections.nCopies(-it.value, it.key) }
-        return if(id
-                .distinct()
-                .map { items[it] }
-                .any { (it == null) || (it.item.probability == 0.0) }) {
-            CalculationItemView(id, null)
-        } else {
-            val distance = id
-                    .map { global.walked / (global.pokestop * items[it]!!.item.probability) }
-                    .sum()
-            CalculationItemView(id, distance)
-        }
-    }
+    private fun buildCalculationItemViews(global: Global, items: Collection<UserItem>, pool: Map<Item, Int>): Collection<ItemView> =
+            pool
+                    .filterValues { it < 0 }
+                    .map { entry ->
+                        val item = items.first { it.item == entry.key }.item
+                        ItemView(
+                                id = item.id,
+                                name = item.name,
+                                count = -entry.value,
+                                distance = if (global.pokestop * item.probability == 0.0) null else -entry.value * global.walked / (global.pokestop * item.probability)
+                        )
+                    }
 
     private data class EquationData(
             val speedCommon: Double,
             val speedBuddy: Double,
             var candy: Int
+    )
+
+    private data class CalculationGeneral(
+            val number: Int,
+            val distance: Double?,
+            val distanceWithRare: Double?,
+            val rareToUse: Int?
     )
 
 }

@@ -1,33 +1,48 @@
 package com.lonebytesoft.hamster.pokemongo.view
 
-class CalculationView(
-        val families: Collection<CalculationFamilyView>,
-        val candyNeeded: Collection<CalculationCandyView>,
-        val itemNeeded: CalculationItemView
+data class CalculationView(
+        val items: Collection<ItemView>,
+        val families: Collection<FamilyView>
 )
 
-class CalculationFamilyView(
-        val lead: Int,
-        val members: Collection<CalculationMemberView>,
-        val candyNeeded: CalculationCandyView,
-        val itemNeeded: CalculationItemView,
-        val pokemonNeeded: Double?
-)
-
-class CalculationMemberView(
+data class ItemView(
         val id: Int,
-        val isPresent: Boolean
-)
-
-class CalculationCandyView(
-        val lead: Int,
-        val candy: Int,
-        val distance: Double?,
-        val rareCandy: Int,
-        val distanceWithRare: Double?
-)
-
-class CalculationItemView(
-        val id: Collection<Int>,
+        val name: String,
+        val count: Int,
         val distance: Double?
+)
+
+data class FamilyView(
+        val number: Int,
+        val name: String,
+        val pokemons: Collection<PokemonView>,
+        val buddyDistance: Double,
+
+        val candiesNeeded: Int,
+
+        val distanceGeneral: Double?,
+        val distanceWithRareGeneral: Double?,
+        val rareToUseGeneral: Int?,
+
+        val distancePokemons: Double?,
+        val distanceCandies: Double?,
+        val distanceCandiesWithRare: Double?,
+        val rareToUse: Int?,
+
+        val itemsNeeded: Collection<ItemView>,
+        val distanceItems: Double?
+)
+
+data class PokemonView(
+        val number: Int,
+        val name: String,
+        val form: String?,
+        val rank: Int,
+
+        val isPresent: Boolean,
+
+        val notes: String?,
+
+        val evolveCandy: Int?,
+        val evolveNotes: String?
 )

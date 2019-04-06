@@ -1,11 +1,11 @@
 package com.lonebytesoft.hamster.pokemongo.js
 
-import kotlin.js.asDynamic
-
 internal inline fun <T> T?.aggregate(value: T?, aggregator: (T, T) -> T): T? =
         if ((this != null) && (value != null)) aggregator(this, value) else null
 
-internal fun Double?.isGreaterZero(): Boolean = (this ?: Double.MAX_VALUE) > 0.0
+internal fun Double?.isNullOrGreaterZero(): Boolean = (this ?: Double.MAX_VALUE) > 0.0
+
+internal fun Double?.isGreaterZero(): Boolean = (this ?: -1.0) > 0.0
 
 internal fun Double.format(digits: Int): String = this.asDynamic().toFixed(digits) as String
 

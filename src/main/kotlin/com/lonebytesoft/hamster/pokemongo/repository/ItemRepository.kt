@@ -4,4 +4,7 @@ import com.lonebytesoft.hamster.pokemongo.model.Item
 import org.springframework.data.repository.CrudRepository
 
 interface ItemRepository : CrudRepository<Item, Int> {
+
+    fun findByName(name: String): Item?
+
 }

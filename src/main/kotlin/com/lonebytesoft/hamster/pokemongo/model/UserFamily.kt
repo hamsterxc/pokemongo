@@ -8,20 +8,18 @@ import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
 
 @Entity
-data class UserPokemon(
+data class UserFamily(
         @Id
         @GeneratedValue(strategy = GenerationType.AUTO)
         var id: Int = 0,
 
         @ManyToOne(optional = false)
         @JoinColumn
-        var pokemon: Pokemon = Pokemon(),
+        var family: Family = Family(),
+
         @ManyToOne(optional = false)
         @JoinColumn
         var user: User = User(),
 
-        var seen: Int = 0,
-        var caught: Int = 0,
-        var have: Int = 0,
-        var introduced: Double = 0.0
+        var candy: Int = 0
 )

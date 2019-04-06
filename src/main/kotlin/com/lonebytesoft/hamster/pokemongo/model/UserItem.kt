@@ -8,7 +8,7 @@ import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
 
 @Entity
-class UserItem(
+data class UserItem(
         @Id
         @GeneratedValue(strategy = GenerationType.AUTO)
         var id: Int = 0,
@@ -19,5 +19,6 @@ class UserItem(
         @JoinColumn(name = "user_id")
         var user: User = User(),
 
-        var have: Int = 0
+        var have: Int = 0,
+        var introduced: Double = 0.0
 )

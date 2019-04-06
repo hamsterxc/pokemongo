@@ -4,7 +4,7 @@ import javax.persistence.Entity
 import javax.persistence.Id
 
 @Entity
-class Item (
+data class Item (
         @Id
         var id: Int = 0,
         var name: String = "",
