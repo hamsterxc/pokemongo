@@ -15,7 +15,7 @@
         <version.java>1.8</version.java>
         <version.kotlin>1.1.60</version.kotlin>
         <version.springboot>1.5.8.RELEASE</version.springboot>
-        <version.junit>4.12</version.junit>
+        <version.junit>4.13.1</version.junit>
     </properties>
 
     <build>
